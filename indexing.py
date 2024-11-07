@@ -1,22 +1,18 @@
 import time
-from collections.abc import Callable
 from pathlib import Path
 
 import click
-import ollama
 
-import utils
 from db import DB
+from utils import Encoder, check_model, get_encoder
 
-Encoder = Callable[[str], list[float]]
 
-
-def run(folder: str, extension: str, model: str, database: str):
+def run(folder: str, extension: str, model: str, db_path: str):
     start = time.time()
-    if not utils.check_model(model, "encoder"):
+    if not check_model(model, "encoder"):
         return click.echo(click.style("Model is not up, aborting", fg="red"))
 
-    db = DB(database)
+    db = DB(db_path)
     index_folder(folder, extension, model, db=db)
     db.commit()
 
@@ -34,7 +30,7 @@ def index_folder(folder: str, extension: str, model: str, db: DB):
     files = [f for f in Path(folder).glob(f"**/*.{extension}")]
     click.echo(f"Found {click.style(len(files), fg='yellow')} files:")
 
-    encoder = _get_encoder(model)
+    encoder = get_encoder(model)
     for i, f in enumerate(files):
         click.echo(
             click.style(f" {i + 1:3d}. ", dim=True) + click.style(f, fg="cyan"),
@@ -94,10 +90,3 @@ def _get_chunks(content: str) -> list[str]:
             continue
         chunks[c] = "## " + chunks[c]
     return chunks
-
-
-def _get_encoder(model: str = "nomic-embed-text") -> Encoder:
-    def encoder(text: str) -> list[float]:
-        return ollama.embeddings(model=model, prompt=text)["embedding"]
-
-    return encoder

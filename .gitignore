@@ -54,7 +54,7 @@ coverage.xml
 
 # Logs and databases
 *.log
-*.sqlite
+*.sqlite*
 
 # Other
 .DS_Store

@@ -2,6 +2,8 @@ import sqlite3
 
 import numpy as np
 
+from utils import Embedding16
+
 
 class DB:
     def __init__(self, db_path: str | None = None):
@@ -34,14 +36,31 @@ class DB:
         self.cursor.execute("CREATE INDEX IF NOT EXISTS idx_anchor ON embeddings (file, anchor)")
         self.cursor.execute("CREATE INDEX IF NOT EXISTS idx_model ON embeddings (model)")
 
-    def store(self, anchor: str, chunk: str, embedding: list[float], file: str, model: str):
-        embedding_blob = np.array(embedding, dtype=np.float16).tobytes()
+    def store(self, anchor: str, chunk: str, embedding: Embedding16, file: str, model: str):
         self.cursor.execute(
             """
             INSERT INTO embeddings (anchor, chunk, embedding, file, model) VALUES (?, ?, ?, ?, ?)
             """,
-            (anchor, chunk, embedding_blob, file, model),
+            (anchor, chunk, embedding.tobytes(), file, model),
         )
+
+    def all(self, model: str) -> list[tuple[str, str, Embedding16, str]]:
+        res = self.cursor.execute(
+            """
+            SELECT anchor, chunk, embedding, file FROM embeddings WHERE model = ?""",
+            (model,),
+        ).fetchall()
+
+        # change embedding to matrix, don't loop
+        return [
+            dict(
+                anchor=r[0],
+                chunk=r[1],
+                embedding=np.frombuffer(r[2], dtype=np.float16),
+                file=r[3],
+            )
+            for r in res
+        ]
 
     def exists(self, anchor: str, file: str, model: str, chunk: str) -> bool:
         res = self.cursor.execute(

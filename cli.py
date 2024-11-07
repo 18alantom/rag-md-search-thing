@@ -4,6 +4,7 @@
 import click
 
 import indexing
+import searching
 
 
 @click.group()
@@ -11,8 +12,18 @@ def cli(): ...
 
 
 @cli.command("search")
-def search():
-    click.echo("Searching...")
+@click.option(
+    "--model-encoder",
+    help="Model to use for the encoder",
+    default="nomic-embed-text",
+)
+@click.option(
+    "--db-path",
+    "-d",
+    help="Path to the index database",
+)
+def search(model_encoder: str, db_path: str):
+    searching.run(db_path, model_encoder)
 
 
 @cli.command("index")
@@ -27,7 +38,7 @@ def search():
     default="nomic-embed-text",
 )
 @click.option(
-    "--database",
+    "--db-path",
     "-d",
     help="Path to the index database",
 )
@@ -37,8 +48,8 @@ def search():
     help='Extensions to index (eg "md,txt")',
     default="md",
 )
-def index(folder: str, extension: str, model: str, database: str):
-    indexing.run(folder, extension, model, database)
+def index(folder: str, extension: str, model: str, db_path: str):
+    indexing.run(folder, extension, model, db_path)
 
 
 @cli.command("delete")
