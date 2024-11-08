@@ -1,10 +1,15 @@
+https://github.com/user-attachments/assets/18cd70b2-0c64-400d-9078-d45d490b41da
+
 ## What is this?
 
 An experiment in seeing how quickly an RAG based document search thing can be
-made. It obviously doesn't work very well, everything runs zero-shot (no fine
-tuning) and I haven't really read up on RAG. But it allows me to see how a
-system like this can be really powerful when it comes to answering search
-queries.
+made.
+
+It obviously doesn't work very well, everything runs zero-shot (no fine
+tuning) and I haven't really read up on RAG to make a decent implementation.
+
+But it allows me to see how a system like this can be really powerful when
+it comes to answering search queries.
 
 
 ## How to run?
