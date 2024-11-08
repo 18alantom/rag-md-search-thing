@@ -30,26 +30,36 @@ class DB:
                 chunk TEXT,
                 embedding BLOB,
                 file TEXT,
+                folder TEXT,
                 model TEXT
             )""")
 
         self.cursor.execute("CREATE INDEX IF NOT EXISTS idx_anchor ON embeddings (file, anchor)")
         self.cursor.execute("CREATE INDEX IF NOT EXISTS idx_model ON embeddings (model)")
 
-    def store(self, anchor: str, chunk: str, embedding: Embedding16, file: str, model: str):
+    def store(self, anchor: str, chunk: str, embedding: Embedding16, file: str, folder: str, model: str):
         self.cursor.execute(
             """
-            INSERT INTO embeddings (anchor, chunk, embedding, file, model) VALUES (?, ?, ?, ?, ?)
+            INSERT INTO embeddings (anchor, chunk, embedding, file, folder, model) VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (anchor, chunk, embedding.tobytes(), file, model),
+            (anchor, chunk, embedding.tobytes(), file, folder, model),
         )
 
-    def all(self, model: str) -> list[tuple[str, str, Embedding16, str]]:
-        res = self.cursor.execute(
-            """
-            SELECT anchor, chunk, embedding, file FROM embeddings WHERE model = ?""",
-            (model,),
-        ).fetchall()
+    def all(self, model: str, folder: str | None = None) -> list[tuple[str, str, Embedding16, str]]:
+        if folder:
+            res = self.cursor.execute(
+                """
+                SELECT anchor, chunk, embedding, file FROM embeddings WHERE model = ? AND folder = ?
+                """,
+                (model, folder),
+            ).fetchall()
+        else:
+            res = self.cursor.execute(
+                """
+                SELECT anchor, chunk, embedding, file FROM embeddings WHERE model = ?
+                """,
+                (model,),
+            ).fetchall()
 
         # change embedding to matrix, don't loop
         return [
@@ -62,11 +72,12 @@ class DB:
             for r in res
         ]
 
-    def exists(self, anchor: str, file: str, model: str, chunk: str) -> bool:
+    def exists(self, anchor: str, file: str, folder: str, model: str, chunk: str) -> bool:
         res = self.cursor.execute(
             """
-            SELECT chunk FROM embeddings WHERE anchor = ? AND file = ? AND model = ?""",
-            (anchor, file, model),
+            SELECT chunk FROM embeddings WHERE anchor = ? AND file = ? AND folder = ? AND model = ?
+            """,
+            (anchor, file, folder, model),
         ).fetchone()
 
         if res is None:

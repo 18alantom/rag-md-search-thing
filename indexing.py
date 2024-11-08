@@ -37,17 +37,18 @@ def index_folder(folder: str, model: str, db: DB):
         with open(f, "r") as file:
             content = file.read()
         chunks = _get_chunks(content)
-        _index_chunks(chunks, f, db, model, encoder)
+        _index_chunks(chunks, f, folder, db, model, encoder)
 
 
-def _index_chunks(chunks: list[str], file: Path, db: DB, model: str, encoder: Encoder):
+def _index_chunks(chunks: list[str], file: Path, folder: str, db: DB, model: str, encoder: Encoder):
     click.echo(f", encoding {click.style(len(chunks), fg='yellow')} chunks", nl=False)
     start = time.time()
+    folder = Path(folder).absolute().as_posix()
 
     count = 0
     for chunk in chunks:
         anchor = _get_anchor(chunk)
-        if db.exists(anchor, file.absolute().as_posix(), model, chunk):
+        if db.exists(anchor, file.absolute().as_posix(), folder, model, chunk):
             count += 1
             continue
 
@@ -58,6 +59,7 @@ def _index_chunks(chunks: list[str], file: Path, db: DB, model: str, encoder: En
                 chunk,
                 embedding,
                 file.absolute().as_posix(),
+                folder,
                 model,
             )
             count += 1

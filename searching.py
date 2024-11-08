@@ -20,7 +20,7 @@ class Search:
     searcher: Searcher
     index: list[dict]
 
-    def __init__(self, db_path: str, model_encoder: str, model_searcher: str):
+    def __init__(self, db_path: str, folder: str | None, model_encoder: str, model_searcher: str):
         self.db = DB(db_path)
 
         self.model_encoder = model_encoder
@@ -31,7 +31,9 @@ class Search:
         check_model(self.model_searcher, "searcher", silent=True, throw=True)
         self.searcher = get_searcher(self.model_searcher)
 
-        self.index = self.db.all(self.model_encoder)
+        if folder is not None:
+            folder = Path(folder).absolute().as_posix()
+        self.index = self.db.all(self.model_encoder, folder)
 
     def run(self):
         click.echo("Starting search, enter " + click.style("q", fg="yellow") + " to quit.")
@@ -46,7 +48,7 @@ class Search:
 
             embedding = self.encoder(r)
             sims = [(ind, cosine_similarity(embedding, ind["embedding"])) for ind in self.index]
-            sims = [(ind, sim) for ind, sim in sims if sim > 0.55][:5]
+            sims = [(ind, sim) for ind, sim in sims if sim > 0.55][:4]
 
             if not sims:
                 click.secho("  No results found.", fg="yellow", dim=True)
@@ -56,7 +58,8 @@ class Search:
             sims.sort(key=lambda x: x[1], reverse=True)
             click.secho("\u25cb ", fg="green", bold=True, nl=False)
             for res in self.searcher(r, [ind["chunk"] for ind, _ in sims]):
-                click.secho(res["message"]["content"], fg="bright_white", nl=False)
+                content = res["message"]["content"].replace("\n", "\n  ")
+                click.secho(content, fg="bright_white", nl=False)
 
             click.secho("\n\nReferences:", bold=True)
             for i, (ind, sim) in enumerate(sims):
@@ -64,7 +67,7 @@ class Search:
                 file = Path(ind["file"]).relative_to(
                     Path(".").absolute()
                 )  # will throw if not called from repo root
-                click.secho(f"{file}#{ind['anchor']} ", fg="cyan", underline=True, nl=False)
+                click.secho(f"{file}#{ind['anchor']}", fg="cyan", underline=True, nl=False)
                 click.echo(click.style(" · ", dim=True) + click.style(f"{sim:.4f}", fg="blue", dim=True))
                 # click.secho(format_chunk(ind["chunk"] + "..."), dim=True)
             print()
@@ -72,8 +75,8 @@ class Search:
     def _answer(self) -> str: ...
 
 
-def run(db_path: str, model_encoder: str, model_searcher: str):
-    Search(db_path, model_encoder, model_searcher).run()
+def run(db_path: str, model_encoder: str, model_searcher: str, folder: str | None):
+    Search(db_path, folder, model_encoder, model_searcher).run()
 
 
 def cosine_similarity(a: Embedding16, b: Embedding16) -> float:
@@ -87,10 +90,12 @@ def format_chunk(chunk: str) -> str:
 
 def get_searcher(model_searcher: str) -> Searcher:
     # Prompt
-    template = """Use the following context to answer the question at the end.
+    template = """Use the given context to answer the question at the end.
     If you don't know the answer, say that you don't know, don't make up an answer.
-    Try to be concise and break the answer into multiple steps.
-    {context}
+    Be concise and to the point. Break the answer into steps if needed.
+    Your answer should be found in the context. Do not refer to the context in your answer.
+
+    Context: {context}
     Question: {question}
     Helpful Answer:"""
 
