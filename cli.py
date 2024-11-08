@@ -59,10 +59,5 @@ def index(folder: str, model: str, db_path: str):
     indexing.run(folder, model, db_path)
 
 
-@cli.command("delete")
-def delete():
-    click.echo("Deleting...")
-
-
 if __name__ == "__main__":
     cli()
