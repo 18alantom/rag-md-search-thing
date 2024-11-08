@@ -26,8 +26,3 @@ ignore = [
   "UP015",  # Unnecessary open mode parameters
   "SIM108", # Use ternary operator {contents} instead of if-else-block
 ]
-
-
-[lint.mccabe]
-# Flag errors (`C901`) whenever the complexity level exceeds 5
-max-complexity = 5

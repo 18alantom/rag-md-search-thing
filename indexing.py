@@ -7,13 +7,13 @@ from db import DB
 from utils import Encoder, check_model, get_encoder
 
 
-def run(folder: str, extension: str, model: str, db_path: str):
+def run(folder: str, model: str, db_path: str):
     start = time.time()
     if not check_model(model, "encoder"):
         return click.echo(click.style("Model is not up, aborting", fg="red"))
 
     db = DB(db_path)
-    index_folder(folder, extension, model, db=db)
+    index_folder(folder, model, db=db)
     db.commit()
 
     duration = time.time() - start
@@ -22,12 +22,10 @@ def run(folder: str, extension: str, model: str, db_path: str):
     )
 
 
-def index_folder(folder: str, extension: str, model: str, db: DB):
-    click.echo(
-        "Indexing " + click.style(extension, fg="cyan") + f" files in {click.style(folder, fg='cyan')}"
-    )
+def index_folder(folder: str, model: str, db: DB):
+    click.echo(f"Indexing files in {click.style(folder, fg='cyan')}")
 
-    files = [f for f in Path(folder).glob(f"**/*.{extension}")]
+    files = [f for f in Path(folder).glob("**/*.md")]
     click.echo(f"Found {click.style(len(files), fg='yellow')} files:")
 
     encoder = get_encoder(model)

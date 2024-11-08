@@ -13,17 +13,22 @@ def cli(): ...
 
 @cli.command("search")
 @click.option(
+    "--db-path",
+    "-d",
+    help="Path to the index database",
+)
+@click.option(
     "--model-encoder",
     help="Model to use for the encoder",
     default="nomic-embed-text",
 )
 @click.option(
-    "--db-path",
-    "-d",
-    help="Path to the index database",
+    "--model-searcher",
+    help="Model to use for the searcher",
+    default="llama3.2",
 )
-def search(model_encoder: str, db_path: str):
-    searching.run(db_path, model_encoder)
+def search(db_path: str, model_encoder: str, model_searcher: str):
+    searching.run(db_path, model_encoder, model_searcher)
 
 
 @cli.command("index")
@@ -42,14 +47,8 @@ def search(model_encoder: str, db_path: str):
     "-d",
     help="Path to the index database",
 )
-@click.option(
-    "--extension",
-    "-e",
-    help='Extensions to index (eg "md,txt")',
-    default="md",
-)
-def index(folder: str, extension: str, model: str, db_path: str):
-    indexing.run(folder, extension, model, db_path)
+def index(folder: str, model: str, db_path: str):
+    indexing.run(folder, model, db_path)
 
 
 @cli.command("delete")
